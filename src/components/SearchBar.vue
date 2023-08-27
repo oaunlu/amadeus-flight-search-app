@@ -33,7 +33,7 @@
       </v-col>
       <v-col cols="3">
         <v-text-field
-          type="datetime-local"
+          type="date"
           density="comfortable"
           variant="underlined"
           theme="dark"
@@ -43,7 +43,7 @@
       </v-col>
       <v-col cols="3">
         <v-text-field
-          type="datetime-local"
+          type="date"
           density="comfortable"
           variant="underlined"
           theme="dark"
@@ -66,8 +66,9 @@
       </v-col>
     </v-row>
     <v-alert
+      v-if="isEmptyInput"
       text="Please make a selection"
-      :type="alertType"
+      type="warning"
       variant="tonal"
       width="1150"
     ></v-alert>
@@ -75,7 +76,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, type Ref, ref, computed } from 'vue'
+import { defineComponent, onMounted, type Ref, ref } from 'vue'
 
 import { useSearchStore } from '@/stores/search'
 
@@ -85,25 +86,16 @@ export default defineComponent({
 
     const airportList: Ref<any[] | undefined> = ref()
 
-    onMounted(() => {
-      airportList.value = searchStore.airportList
+    onMounted(async () => {
+      airportList.value = await searchStore.airportList
     })
 
-    const departureAirport: Ref<string | undefined> = ref()
-    const destinationAirport: Ref<string | undefined> = ref()
-    const departureDate: Ref<string | undefined> = ref()
-    const returnDate: Ref<string | undefined> = ref()
+    const departureAirport: Ref<string | undefined> = ref('Antalya Havalimanı(AYT)')
+    const destinationAirport: Ref<string | undefined> = ref('Samsun Çarşamba Havalimanı(SZF)')
+    const departureDate: Ref<string | undefined> = ref('2023-08-28')
+    const returnDate: Ref<string | undefined> = ref('2023-08-29')
 
-    const alertType = computed(() => (isEmptyInput ? 'warning' : 'info'))
-
-    const isEmptyInput = computed(() => {
-      return (
-        !departureAirport.value ||
-        !destinationAirport.value ||
-        !departureDate.value ||
-        (!searchStore.isOneWayFlight && !returnDate.value)
-      )
-    })
+    const isEmptyInput = ref(false)
 
     return {
       searchStore,
@@ -112,18 +104,37 @@ export default defineComponent({
       destinationAirport,
       departureDate,
       returnDate,
-      alertType
+      isEmptyInput
     }
   },
   methods: {
     search() {
+      if (this.checkInput()) return
       const flightDetails = {
         departureAirport: this.departureAirport,
         destinationAirport: this.destinationAirport,
         departureDate: this.departureDate,
         returnDate: this.returnDate
+      } as {
+        departureAirport: string
+        destinationAirport: string
+        departureDate: string
+        returnDate: string
       }
       this.searchStore.search(flightDetails)
+    },
+    checkInput() {
+      if (
+        !this.departureAirport ||
+        !this.destinationAirport ||
+        !this.departureDate ||
+        (!this.searchStore.isOneWayFlight && !this.returnDate)
+      ) {
+        this.isEmptyInput = true
+      } else {
+        this.isEmptyInput = false
+      }
+      return this.isEmptyInput
     }
   }
 })
